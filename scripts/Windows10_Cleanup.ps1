@@ -88,3 +88,50 @@ Invoke-Expression "$prog $param"
 	{
 		errorhandling -code 1;
 	}
+	
+<#
+.SYNPOSIS
+    Cleans unwanted pre-bundled Windows 10 applications
+#>
+
+$RemoveApps = "Microsoft.3DBuilder", "Microsoft.BingFinance", "Microsoft.BingFoodAndDrink", "Microsoft.BingHealthAndFitness", "Microsoft.BingNews",`
+"Microsoft.BingSports", "Microsoft.BingTravel", "Microsoft.Weather", "Microsoft.Getstarted", "Microsoft.MicrosoftOfficeHub", "Microsoft.MicrosoftSolitaireCollection",`
+"Microsoft.Office.OneNote", "Microsoft.People", "Microsoft.SkypeApp", "Microsoft.Windows.Photos", "Microsoft.WindowsCamera", "microsoft.windowscommunicationsapps",`
+"Microsoft.WindowsMaps", "Microsoft.WindowsPhone", "Microsoft.WindowsReadingList", "Microsoft.WindowsSoundRecorder", "Microsoft.ZuneMusic", "Microsoft.ZuneVideo"`
+
+# Possible options: Microsoft.Appconnector, Microsoft.WindowsAlarms, Microsoft.WindowsCalculator, Microsoft.WindowsScan, Microsoft.XboxApp
+
+
+ForEach($App in $RemoveApps)
+{
+    $Package = Get-AppxPackage -name $App
+    
+    if ($Package -ne $null)
+    {
+        Remove-AppxPackage -package $Package.PackageFullName
+
+        if(-not(Get-AppxPackage -Name $App))
+        {
+            Write-host "$App successfully removed"
+        }
+        else
+        {
+            Write-Warning "Failed to remove $App"
+        }
+    }
+
+    $ProvisionedPackage = Get-AppxProvisionedPackage -online | Where-Object {$_.displayName -eq $App}
+    if ($ProvisionedPackage -ne $null)
+    {
+        Remove-AppxProvisionedPackage -online -PackageName $ProvisionedPackage.PackageName
+
+        if(-not(Get-AppxProvisionedPackage -online | Where-Object {$_.displayName -eq $App}))
+        {
+            Write-host "$App (provisioned) successfully removed"
+        }
+        else
+        {
+            Write-Warning "Failed to remove (provisioned) $App"
+        }
+    }
+}
